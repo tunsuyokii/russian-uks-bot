@@ -7,11 +7,16 @@
   const VISION_MODEL = 'gpt-4o';
   const VERIFY_MODEL = 'gpt-5.2';
 
-  const dropZone = document.getElementById('drop-zone');
-  const fileInput = document.getElementById('file-input');
-  const previewWrap = document.getElementById('preview-wrap');
-  const preview = document.getElementById('preview');
-  const clearBtn = document.getElementById('clear-btn');
+  const contextDropZone = document.getElementById('context-drop-zone');
+  const contextFileInput = document.getElementById('context-file-input');
+  const contextPreviewWrap = document.getElementById('context-preview-wrap');
+  const contextPreview = document.getElementById('context-preview');
+  const contextClearBtn = document.getElementById('context-clear-btn');
+  const questionDropZone = document.getElementById('question-drop-zone');
+  const questionFileInput = document.getElementById('question-file-input');
+  const questionPreviewWrap = document.getElementById('question-preview-wrap');
+  const questionPreview = document.getElementById('question-preview');
+  const questionClearBtn = document.getElementById('question-clear-btn');
   const submitBtn = document.getElementById('submit-btn');
   const resultPlaceholder = document.getElementById('result-placeholder');
   const resultContent = document.getElementById('result-content');
@@ -19,44 +24,47 @@
   const explanationText = document.getElementById('explanation-text');
   const resultError = document.getElementById('result-error');
   const loading = document.getElementById('loading');
-  const contextInput = document.getElementById('context-input');
-  const questionInput = document.getElementById('question-input');
-  const submitTextBtn = document.getElementById('submit-text-btn');
 
-  let currentImageDataUrl = null;
+  let contextImageDataUrl = null;
+  let questionImageDataUrl = null;
+  let lastPasteTarget = 'context';
 
-  function getContextAndQuestion() {
-    const context = (contextInput && contextInput.value || '').trim();
-    const question = (questionInput && questionInput.value || '').trim();
-    return { context, question };
+  function updateSubmitButton() {
+    submitBtn.disabled = !(contextImageDataUrl && questionImageDataUrl);
   }
 
-  function buildCombinedPrompt(context, question) {
-    const parts = [];
-    if (context) parts.push('Контекст:\n' + context);
-    if (question) parts.push('Вопрос:\n' + question);
-    return parts.join('\n\n');
-  }
-
-  function showPreview(dataUrl) {
-    currentImageDataUrl = dataUrl;
-    preview.src = dataUrl;
-    previewWrap.classList.remove('hidden');
-    dropZone.classList.add('hidden');
-    submitBtn.classList.remove('hidden');
-    submitBtn.disabled = false;
+  function setImage(slot, dataUrl) {
+    if (slot === 'context') {
+      contextImageDataUrl = dataUrl;
+      contextPreview.src = dataUrl;
+      contextPreviewWrap.classList.remove('hidden');
+      contextDropZone.classList.add('hidden');
+    } else {
+      questionImageDataUrl = dataUrl;
+      questionPreview.src = dataUrl;
+      questionPreviewWrap.classList.remove('hidden');
+      questionDropZone.classList.add('hidden');
+    }
     hideResult();
+    updateSubmitButton();
   }
 
-  function clearImage() {
-    currentImageDataUrl = null;
-    fileInput.value = '';
-    preview.src = '';
-    previewWrap.classList.add('hidden');
-    dropZone.classList.remove('hidden');
-    submitBtn.classList.add('hidden');
-    submitBtn.disabled = true;
+  function clearImage(slot) {
+    if (slot === 'context') {
+      contextImageDataUrl = null;
+      contextFileInput.value = '';
+      contextPreview.src = '';
+      contextPreviewWrap.classList.add('hidden');
+      contextDropZone.classList.remove('hidden');
+    } else {
+      questionImageDataUrl = null;
+      questionFileInput.value = '';
+      questionPreview.src = '';
+      questionPreviewWrap.classList.add('hidden');
+      questionDropZone.classList.remove('hidden');
+    }
     hideResult();
+    updateSubmitButton();
   }
 
   function hideResult() {
@@ -136,104 +144,49 @@
     return { answer, explanation };
   }
 
-  async function analyzeImage(dataUrl) {
-    const base64 = getBase64FromDataUrl(dataUrl);
-    const mime = getMimeType(dataUrl);
-    const { context, question } = getContextAndQuestion();
-    const combined = buildCombinedPrompt(context, question);
-
-    let visionPrompt = [
-      'Ты эксперт по русскому языку. По изображению видишь задание (упражнение, вопрос, тест).',
-      'Сделай два блока:',
-      '1) Ответ: точный ответ на задание (слово, буквы, предложение или номер варианта — как требуется).',
+  async function analyzeWithTwoImages(contextDataUrl, questionDataUrl) {
+    const prompt = [
+      'Ты эксперт по русскому языку. На двух изображениях:',
+      '1) Первое изображение — контекст (текст, отрывок, правило, по которому составлен вопрос).',
+      '2) Второе изображение — формулировка вопроса или задания.',
+      'Дай ответ на вопрос по контексту. Сделай два блока:',
+      '1) Ответ: точный ответ (слово, буквы, предложение или номер варианта — как требуется).',
       '2) Пояснение: кратко объясни правило или ход решения.'
     ].join('\n');
-    if (combined) {
-      visionPrompt += '\n\nДополнительно по контексту и вопросу:\n' + combined;
-    }
+
+    const content = [
+      { type: 'text', text: prompt },
+      {
+        type: 'image_url',
+        image_url: {
+          url: contextDataUrl.indexOf('data:') === 0 ? contextDataUrl : 'data:image/png;base64,' + contextDataUrl
+        }
+      },
+      {
+        type: 'image_url',
+        image_url: {
+          url: questionDataUrl.indexOf('data:') === 0 ? questionDataUrl : 'data:image/png;base64,' + questionDataUrl
+        }
+      }
+    ];
+
+    const contextBase64 = contextDataUrl.indexOf('data:') === 0 ? getBase64FromDataUrl(contextDataUrl) : contextDataUrl;
+    const contextMime = contextDataUrl.indexOf('data:') === 0 ? getMimeType(contextDataUrl) : 'image/png';
+    const questionBase64 = questionDataUrl.indexOf('data:') === 0 ? getBase64FromDataUrl(questionDataUrl) : questionDataUrl;
+    const questionMime = questionDataUrl.indexOf('data:') === 0 ? getMimeType(questionDataUrl) : 'image/png';
+
+    content[1].image_url.url = 'data:' + contextMime + ';base64,' + contextBase64;
+    content[2].image_url.url = 'data:' + questionMime + ';base64,' + questionBase64;
 
     const visionBody = {
       model: VISION_MODEL,
-      messages: [
-        {
-          role: 'user',
-          content: [
-            { type: 'text', text: visionPrompt },
-            {
-              type: 'image_url',
-              image_url: {
-                url: 'data:' + mime + ';base64,' + base64
-              }
-            }
-          ]
-        }
-      ],
+      messages: [{ role: 'user', content: content }],
       max_tokens: 1024
     };
 
     const visionRes = await proxyChat(visionBody);
     const rawContent = visionRes.choices && visionRes.choices[0] && visionRes.choices[0].message
       ? visionRes.choices[0].message.content
-      : '';
-
-    const { answer, explanation } = parseAnswerAndExplanation(rawContent);
-
-    const verifyPrompt = [
-      'Проверь и при необходимости исправь ответ по русскому языку.',
-      'Ответ: ' + answer,
-      'Пояснение: ' + explanation,
-      'Верни в том же формате: Ответ: ... Пояснение: ... Если всё верно — оставь как есть, иначе дай исправленный вариант.'
-    ].join('\n');
-
-    let verifyContent = rawContent;
-    const verifyBody = {
-      model: VERIFY_MODEL,
-      messages: [{ role: 'user', content: verifyPrompt }],
-      max_tokens: 1024
-    };
-    try {
-      const verifyRes = await proxyChat(verifyBody);
-      verifyContent = verifyRes.choices && verifyRes.choices[0] && verifyRes.choices[0].message
-        ? verifyRes.choices[0].message.content
-        : rawContent;
-    } catch (_) {
-      try {
-        const fallbackRes = await proxyChat({
-          model: 'gpt-4o',
-          messages: [{ role: 'user', content: verifyPrompt }],
-          max_tokens: 1024
-        });
-        verifyContent = fallbackRes.choices && fallbackRes.choices[0] && fallbackRes.choices[0].message
-          ? fallbackRes.choices[0].message.content
-          : rawContent;
-      } catch (__) {}
-    }
-    return parseAnswerAndExplanation(verifyContent);
-  }
-
-  async function analyzeByContextAndQuestion(context, question) {
-    const combined = buildCombinedPrompt(context, question);
-    if (!combined) throw new Error('Введите контекст и вопрос.');
-
-    const textPrompt = [
-      'Ты эксперт по русскому языку. Ответь на вопрос по приведённому контексту.',
-      '',
-      combined,
-      '',
-      'Сделай два блока:',
-      '1) Ответ: точный ответ на вопрос.',
-      '2) Пояснение: кратко объясни правило или ход решения.'
-    ].join('\n');
-
-    const textBody = {
-      model: VISION_MODEL,
-      messages: [{ role: 'user', content: textPrompt }],
-      max_tokens: 1024
-    };
-
-    const textRes = await proxyChat(textBody);
-    const rawContent = textRes.choices && textRes.choices[0] && textRes.choices[0].message
-      ? textRes.choices[0].message.content
       : '';
 
     const { answer, explanation } = parseAnswerAndExplanation(rawContent);
@@ -271,10 +224,10 @@
   }
 
   async function onSubmit() {
-    if (!currentImageDataUrl) return;
+    if (!contextImageDataUrl || !questionImageDataUrl) return;
     setLoading(true);
     try {
-      const { answer, explanation } = await analyzeImage(currentImageDataUrl);
+      const { answer, explanation } = await analyzeWithTwoImages(contextImageDataUrl, questionImageDataUrl);
       showResult(answer, explanation);
     } catch (e) {
       showError('Ошибка: ' + (e.message || String(e)));
@@ -283,56 +236,44 @@
     }
   }
 
-  async function onSubmitText() {
-    const { context, question } = getContextAndQuestion();
-    if (!context || !question) {
-      showError('Заполните контекст и вопрос.');
-      return;
-    }
-    setLoading(true);
-    try {
-      const { answer, explanation } = await analyzeByContextAndQuestion(context, question);
-      showResult(answer, explanation);
-    } catch (e) {
-      showError('Ошибка: ' + (e.message || String(e)));
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  function handleFile(file) {
+  function handleFile(slot, file) {
     if (!file || !file.type.startsWith('image/')) return;
     const reader = new FileReader();
     reader.onload = function () {
-      showPreview(reader.result);
+      setImage(slot, reader.result);
     };
     reader.readAsDataURL(file);
   }
 
-  dropZone.addEventListener('click', function () {
-    fileInput.click();
-  });
+  function setupSlot(slot, dropZone, fileInput, clearBtn) {
+    dropZone.addEventListener('click', function () {
+      lastPasteTarget = slot;
+      fileInput.click();
+    });
+    fileInput.addEventListener('change', function () {
+      const file = fileInput.files && fileInput.files[0];
+      handleFile(slot, file);
+    });
+    clearBtn.addEventListener('click', function () {
+      clearImage(slot);
+    });
+    dropZone.addEventListener('dragover', function (e) {
+      e.preventDefault();
+      dropZone.classList.add('drag-over');
+    });
+    dropZone.addEventListener('dragleave', function () {
+      dropZone.classList.remove('drag-over');
+    });
+    dropZone.addEventListener('drop', function (e) {
+      e.preventDefault();
+      dropZone.classList.remove('drag-over');
+      const file = e.dataTransfer.files && e.dataTransfer.files[0];
+      handleFile(slot, file);
+    });
+  }
 
-  fileInput.addEventListener('change', function () {
-    const file = fileInput.files && fileInput.files[0];
-    handleFile(file);
-  });
-
-  dropZone.addEventListener('dragover', function (e) {
-    e.preventDefault();
-    dropZone.classList.add('drag-over');
-  });
-
-  dropZone.addEventListener('dragleave', function () {
-    dropZone.classList.remove('drag-over');
-  });
-
-  dropZone.addEventListener('drop', function (e) {
-    e.preventDefault();
-    dropZone.classList.remove('drag-over');
-    const file = e.dataTransfer.files && e.dataTransfer.files[0];
-    handleFile(file);
-  });
+  setupSlot('context', contextDropZone, contextFileInput, contextClearBtn);
+  setupSlot('question', questionDropZone, questionFileInput, questionClearBtn);
 
   document.addEventListener('paste', function (e) {
     const items = e.clipboardData && e.clipboardData.items;
@@ -340,13 +281,26 @@
     for (let i = 0; i < items.length; i++) {
       if (items[i].type.indexOf('image') !== -1) {
         e.preventDefault();
-        handleFile(items[i].getAsFile());
+        const file = items[i].getAsFile();
+        if (!file) return;
+        if (lastPasteTarget === 'context' && !contextImageDataUrl) {
+          handleFile('context', file);
+        } else if (lastPasteTarget === 'question' && !questionImageDataUrl) {
+          handleFile('question', file);
+        } else if (!contextImageDataUrl) {
+          handleFile('context', file);
+        } else {
+          handleFile('question', file);
+        }
         return;
       }
     }
   });
 
-  clearBtn.addEventListener('click', clearImage);
+  contextDropZone.addEventListener('click', function () { lastPasteTarget = 'context'; });
+  questionDropZone.addEventListener('click', function () { lastPasteTarget = 'question'; });
+  contextPreviewWrap.addEventListener('click', function () { lastPasteTarget = 'context'; });
+  questionPreviewWrap.addEventListener('click', function () { lastPasteTarget = 'question'; });
+
   submitBtn.addEventListener('click', onSubmit);
-  submitTextBtn.addEventListener('click', onSubmitText);
 })();

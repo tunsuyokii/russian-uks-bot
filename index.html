@@ -10,43 +10,47 @@
   <div class="container">
     <header>
       <h1>Задания по русскому языку</h1>
-      <p class="subtitle">Скриншот задания, контекст и вопрос — получите ответ и пояснение</p>
+      <p class="subtitle">Вставьте картинки контекста и вопроса — получите ответ и пояснение</p>
     </header>
 
-    <!-- Форма 1: загрузка изображения -->
-    <section class="form-section">
-      <h2>Задание с картинки</h2>
-      <div id="drop-zone" class="drop-zone">
-        <input type="file" id="file-input" accept="image/*" hidden>
-        <div class="drop-zone-content">
-          <span class="drop-icon">📷</span>
-          <p>Вставьте изображение (Ctrl+V) или перетащите файл сюда</p>
-          <p class="hint">Подойдёт скриншот из «Ножниц» или любое фото задания</p>
-        </div>
-      </div>
-      <div id="preview-wrap" class="preview-wrap hidden">
-        <img id="preview" alt="Предпросмотр">
-        <button type="button" id="clear-btn" class="btn btn-secondary">Удалить и загрузить другое</button>
-      </div>
-      <button type="button" id="submit-btn" class="btn btn-primary hidden" disabled>Решить задание</button>
-    </section>
-
-    <!-- Форма: контекст (текст для вопроса) -->
+    <!-- Контекст: картинка -->
     <section class="form-section">
       <h2>Контекст</h2>
-      <p class="field-hint">Текст, по которому составлен вопрос (отрывок, правило, предложение)</p>
-      <textarea id="context-input" class="textarea-input" rows="4" placeholder="Вставьте или введите текст контекста…"></textarea>
+      <p class="field-hint">Текст, по которому составлен вопрос — вставьте изображение (Ctrl+V или перетащите)</p>
+      <div id="context-drop-zone" class="drop-zone" data-slot="context">
+        <input type="file" id="context-file-input" accept="image/*" hidden>
+        <div class="drop-zone-content">
+          <span class="drop-icon">📄</span>
+          <p>Картинка контекста</p>
+          <p class="hint">Вставьте или перетащите сюда</p>
+        </div>
+      </div>
+      <div id="context-preview-wrap" class="preview-wrap hidden">
+        <img id="context-preview" alt="Контекст">
+        <button type="button" id="context-clear-btn" class="btn btn-secondary">Удалить</button>
+      </div>
     </section>
 
-    <!-- Форма: вопрос -->
+    <!-- Вопрос: картинка -->
     <section class="form-section">
       <h2>Вопрос</h2>
-      <p class="field-hint">Формулировка задания или вопроса</p>
-      <textarea id="question-input" class="textarea-input" rows="3" placeholder="Введите вопрос по контексту…"></textarea>
+      <p class="field-hint">Формулировка задания или вопроса — вставьте изображение</p>
+      <div id="question-drop-zone" class="drop-zone" data-slot="question">
+        <input type="file" id="question-file-input" accept="image/*" hidden>
+        <div class="drop-zone-content">
+          <span class="drop-icon">❓</span>
+          <p>Картинка с вопросом</p>
+          <p class="hint">Вставьте или перетащите сюда</p>
+        </div>
+      </div>
+      <div id="question-preview-wrap" class="preview-wrap hidden">
+        <img id="question-preview" alt="Вопрос">
+        <button type="button" id="question-clear-btn" class="btn btn-secondary">Удалить</button>
+      </div>
     </section>
 
     <section class="form-section submit-section">
-      <button type="button" id="submit-text-btn" class="btn btn-primary">Решить по контексту и вопросу</button>
+      <button type="button" id="submit-btn" class="btn btn-primary" disabled>Решить по контексту и вопросу</button>
     </section>
 
     <!-- Форма 2: ответ и пояснение -->
