@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Задания по русскому языку</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Задания по русскому языку</h1>
+      <p class="subtitle">Вставьте скриншот задания (Ctrl+V или перетащите картинку) — получите ответ и пояснение</p>
+    </header>
+
+    <!-- Форма 1: загрузка изображения -->
+    <section class="form-section">
+      <h2>Задание с картинки</h2>
+      <div id="drop-zone" class="drop-zone">
+        <input type="file" id="file-input" accept="image/*" hidden>
+        <div class="drop-zone-content">
+          <span class="drop-icon">📷</span>
+          <p>Вставьте изображение (Ctrl+V) или перетащите файл сюда</p>
+          <p class="hint">Подойдёт скриншот из «Ножниц» или любое фото задания</p>
+        </div>
+      </div>
+      <div id="preview-wrap" class="preview-wrap hidden">
+        <img id="preview" alt="Предпросмотр">
+        <button type="button" id="clear-btn" class="btn btn-secondary">Удалить и загрузить другое</button>
+      </div>
+      <button type="button" id="submit-btn" class="btn btn-primary hidden" disabled>Решить задание</button>
+    </section>
+
+    <!-- Форма 2: ответ и пояснение -->
+    <section class="result-section">
+      <h2>Ответ и пояснение</h2>
+      <div id="result-placeholder" class="result-placeholder">
+        <p>Ответ появится здесь после анализа задания.</p>
+      </div>
+      <div id="result-content" class="result-content hidden">
+        <div class="result-block">
+          <h3>Ответ</h3>
+          <div id="answer-text" class="answer-text"></div>
+        </div>
+        <div class="result-block">
+          <h3>Краткое пояснение</h3>
+          <div id="explanation-text" class="explanation-text"></div>
+        </div>
+      </div>
+      <div id="result-error" class="result-error hidden"></div>
+      <div id="loading" class="loading hidden">
+        <span class="spinner"></span>
+        <p>Анализирую задание и проверяю ответ…</p>
+      </div>
+    </section>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
