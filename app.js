@@ -24,6 +24,7 @@
   const explanationText = document.getElementById('explanation-text');
   const resultError = document.getElementById('result-error');
   const loading = document.getElementById('loading');
+  const contextEnrichmentEl = document.getElementById('context-enrichment');
 
   let contextImageDataUrl = null;
   let questionImageDataUrl = null;
@@ -144,8 +145,12 @@
     return { answer, explanation };
   }
 
+  function getContextEnrichment() {
+    return (contextEnrichmentEl && contextEnrichmentEl.value || '').trim();
+  }
+
   async function analyzeWithTwoImages(contextDataUrl, questionDataUrl) {
-    const prompt = [
+    let prompt = [
       'Ты эксперт по русскому языку. На двух изображениях:',
       '1) Первое изображение — контекст (текст, отрывок, правило, по которому составлен вопрос).',
       '2) Второе изображение — формулировка вопроса или задания.',
@@ -153,6 +158,10 @@
       '1) Ответ: точный ответ (слово, буквы, предложение или номер варианта — как требуется).',
       '2) Пояснение: кратко объясни правило или ход решения.'
     ].join('\n');
+    var enrichment = getContextEnrichment();
+    if (enrichment) {
+      prompt += '\n\nДополнительный контекст (обогащение от пользователя):\n' + enrichment;
+    }
 
     const content = [
       { type: 'text', text: prompt },
