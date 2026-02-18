@@ -19,8 +19,24 @@
   const explanationText = document.getElementById('explanation-text');
   const resultError = document.getElementById('result-error');
   const loading = document.getElementById('loading');
+  const contextInput = document.getElementById('context-input');
+  const questionInput = document.getElementById('question-input');
+  const submitTextBtn = document.getElementById('submit-text-btn');
 
   let currentImageDataUrl = null;
+
+  function getContextAndQuestion() {
+    const context = (contextInput && contextInput.value || '').trim();
+    const question = (questionInput && questionInput.value || '').trim();
+    return { context, question };
+  }
+
+  function buildCombinedPrompt(context, question) {
+    const parts = [];
+    if (context) parts.push('Контекст:\n' + context);
+    if (question) parts.push('Вопрос:\n' + question);
+    return parts.join('\n\n');
+  }
 
   function showPreview(dataUrl) {
     currentImageDataUrl = dataUrl;
@@ -123,13 +139,18 @@
   async function analyzeImage(dataUrl) {
     const base64 = getBase64FromDataUrl(dataUrl);
     const mime = getMimeType(dataUrl);
+    const { context, question } = getContextAndQuestion();
+    const combined = buildCombinedPrompt(context, question);
 
-    const visionPrompt = [
+    let visionPrompt = [
       'Ты эксперт по русскому языку. По изображению видишь задание (упражнение, вопрос, тест).',
       'Сделай два блока:',
       '1) Ответ: точный ответ на задание (слово, буквы, предложение или номер варианта — как требуется).',
       '2) Пояснение: кратко объясни правило или ход решения.'
     ].join('\n');
+    if (combined) {
+      visionPrompt += '\n\nДополнительно по контексту и вопросу:\n' + combined;
+    }
 
     const visionBody = {
       model: VISION_MODEL,
@@ -190,11 +211,87 @@
     return parseAnswerAndExplanation(verifyContent);
   }
 
+  async function analyzeByContextAndQuestion(context, question) {
+    const combined = buildCombinedPrompt(context, question);
+    if (!combined) throw new Error('Введите контекст и вопрос.');
+
+    const textPrompt = [
+      'Ты эксперт по русскому языку. Ответь на вопрос по приведённому контексту.',
+      '',
+      combined,
+      '',
+      'Сделай два блока:',
+      '1) Ответ: точный ответ на вопрос.',
+      '2) Пояснение: кратко объясни правило или ход решения.'
+    ].join('\n');
+
+    const textBody = {
+      model: VISION_MODEL,
+      messages: [{ role: 'user', content: textPrompt }],
+      max_tokens: 1024
+    };
+
+    const textRes = await proxyChat(textBody);
+    const rawContent = textRes.choices && textRes.choices[0] && textRes.choices[0].message
+      ? textRes.choices[0].message.content
+      : '';
+
+    const { answer, explanation } = parseAnswerAndExplanation(rawContent);
+
+    const verifyPrompt = [
+      'Проверь и при необходимости исправь ответ по русскому языку.',
+      'Ответ: ' + answer,
+      'Пояснение: ' + explanation,
+      'Верни в том же формате: Ответ: ... Пояснение: ...'
+    ].join('\n');
+
+    let verifyContent = rawContent;
+    try {
+      const verifyRes = await proxyChat({
+        model: VERIFY_MODEL,
+        messages: [{ role: 'user', content: verifyPrompt }],
+        max_tokens: 1024
+      });
+      verifyContent = verifyRes.choices && verifyRes.choices[0] && verifyRes.choices[0].message
+        ? verifyRes.choices[0].message.content
+        : rawContent;
+    } catch (_) {
+      try {
+        const fallbackRes = await proxyChat({
+          model: 'gpt-4o',
+          messages: [{ role: 'user', content: verifyPrompt }],
+          max_tokens: 1024
+        });
+        verifyContent = fallbackRes.choices && fallbackRes.choices[0] && fallbackRes.choices[0].message
+          ? fallbackRes.choices[0].message.content
+          : rawContent;
+      } catch (__) {}
+    }
+    return parseAnswerAndExplanation(verifyContent);
+  }
+
   async function onSubmit() {
     if (!currentImageDataUrl) return;
     setLoading(true);
     try {
       const { answer, explanation } = await analyzeImage(currentImageDataUrl);
+      showResult(answer, explanation);
+    } catch (e) {
+      showError('Ошибка: ' + (e.message || String(e)));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function onSubmitText() {
+    const { context, question } = getContextAndQuestion();
+    if (!context || !question) {
+      showError('Заполните контекст и вопрос.');
+      return;
+    }
+    setLoading(true);
+    try {
+      const { answer, explanation } = await analyzeByContextAndQuestion(context, question);
       showResult(answer, explanation);
     } catch (e) {
       showError('Ошибка: ' + (e.message || String(e)));
@@ -251,4 +348,5 @@
 
   clearBtn.addEventListener('click', clearImage);
   submitBtn.addEventListener('click', onSubmit);
+  submitTextBtn.addEventListener('click', onSubmitText);
 })();

@@ -10,7 +10,7 @@
   <div class="container">
     <header>
       <h1>Задания по русскому языку</h1>
-      <p class="subtitle">Вставьте скриншот задания (Ctrl+V или перетащите картинку) — получите ответ и пояснение</p>
+      <p class="subtitle">Скриншот задания, контекст и вопрос — получите ответ и пояснение</p>
     </header>
 
     <!-- Форма 1: загрузка изображения -->
@@ -29,6 +29,24 @@
         <button type="button" id="clear-btn" class="btn btn-secondary">Удалить и загрузить другое</button>
       </div>
       <button type="button" id="submit-btn" class="btn btn-primary hidden" disabled>Решить задание</button>
+    </section>
+
+    <!-- Форма: контекст (текст для вопроса) -->
+    <section class="form-section">
+      <h2>Контекст</h2>
+      <p class="field-hint">Текст, по которому составлен вопрос (отрывок, правило, предложение)</p>
+      <textarea id="context-input" class="textarea-input" rows="4" placeholder="Вставьте или введите текст контекста…"></textarea>
+    </section>
+
+    <!-- Форма: вопрос -->
+    <section class="form-section">
+      <h2>Вопрос</h2>
+      <p class="field-hint">Формулировка задания или вопроса</p>
+      <textarea id="question-input" class="textarea-input" rows="3" placeholder="Введите вопрос по контексту…"></textarea>
+    </section>
+
+    <section class="form-section submit-section">
+      <button type="button" id="submit-text-btn" class="btn btn-primary">Решить по контексту и вопросу</button>
     </section>
 
     <!-- Форма 2: ответ и пояснение -->
