@@ -77,6 +77,22 @@ header h1 {
   background: rgba(88, 166, 255, 0.06);
 }
 
+.input-file-hidden {
+  position: absolute;
+  width: 0.1px;
+  height: 0.1px;
+  opacity: 0;
+  overflow: hidden;
+  z-index: -1;
+}
+
+.drop-zone-label {
+  display: block;
+  cursor: pointer;
+  margin: -2rem;
+  padding: 2rem;
+}
+
 .drop-zone-content {
   pointer-events: none;
 }

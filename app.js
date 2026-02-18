@@ -237,10 +237,17 @@
   }
 
   function handleFile(slot, file) {
-    if (!file || !file.type.startsWith('image/')) return;
+    if (!file || typeof file !== 'object') return;
+    var isImage = file.type && (file.type.startsWith('image/') || file.type.indexOf('image') !== -1);
+    if (!isImage && file.type && file.type !== '') return;
     const reader = new FileReader();
     reader.onload = function () {
-      setImage(slot, reader.result);
+      if (reader.result && typeof reader.result === 'string') {
+        setImage(slot, reader.result);
+      }
+    };
+    reader.onerror = function () {
+      showError('Не удалось прочитать файл.');
     };
     reader.readAsDataURL(file);
   }
@@ -248,7 +255,6 @@
   function setupSlot(slot, dropZone, fileInput, clearBtn) {
     dropZone.addEventListener('click', function () {
       lastPasteTarget = slot;
-      fileInput.click();
     });
     fileInput.addEventListener('change', function () {
       const file = fileInput.files && fileInput.files[0];
@@ -297,8 +303,8 @@
     }
   });
 
-  contextDropZone.addEventListener('click', function () { lastPasteTarget = 'context'; });
-  questionDropZone.addEventListener('click', function () { lastPasteTarget = 'question'; });
+  document.querySelector('label[for="context-file-input"]').addEventListener('click', function () { lastPasteTarget = 'context'; });
+  document.querySelector('label[for="question-file-input"]').addEventListener('click', function () { lastPasteTarget = 'question'; });
   contextPreviewWrap.addEventListener('click', function () { lastPasteTarget = 'context'; });
   questionPreviewWrap.addEventListener('click', function () { lastPasteTarget = 'question'; });
 

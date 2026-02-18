@@ -18,12 +18,12 @@
       <h2>Контекст</h2>
       <p class="field-hint">Текст, по которому составлен вопрос — вставьте изображение (Ctrl+V или перетащите)</p>
       <div id="context-drop-zone" class="drop-zone" data-slot="context">
-        <input type="file" id="context-file-input" accept="image/*" hidden>
-        <div class="drop-zone-content">
+        <input type="file" id="context-file-input" accept="image/*" class="input-file-hidden">
+        <label for="context-file-input" class="drop-zone-label">
           <span class="drop-icon">📄</span>
           <p>Картинка контекста</p>
-          <p class="hint">Вставьте или перетащите сюда</p>
-        </div>
+          <p class="hint">Нажмите для выбора файла, вставьте (Ctrl+V) или перетащите сюда</p>
+        </label>
       </div>
       <div id="context-preview-wrap" class="preview-wrap hidden">
         <img id="context-preview" alt="Контекст">
@@ -36,12 +36,12 @@
       <h2>Вопрос</h2>
       <p class="field-hint">Формулировка задания или вопроса — вставьте изображение</p>
       <div id="question-drop-zone" class="drop-zone" data-slot="question">
-        <input type="file" id="question-file-input" accept="image/*" hidden>
-        <div class="drop-zone-content">
+        <input type="file" id="question-file-input" accept="image/*" class="input-file-hidden">
+        <label for="question-file-input" class="drop-zone-label">
           <span class="drop-icon">❓</span>
           <p>Картинка с вопросом</p>
-          <p class="hint">Вставьте или перетащите сюда</p>
-        </div>
+          <p class="hint">Нажмите для выбора файла, вставьте (Ctrl+V) или перетащите сюда</p>
+        </label>
       </div>
       <div id="question-preview-wrap" class="preview-wrap hidden">
         <img id="question-preview" alt="Вопрос">
